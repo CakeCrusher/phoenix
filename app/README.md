@@ -26,6 +26,14 @@ pnpm run build
 pnpm run dev
 ```
 
+If the `pnpm run dev` fails, then you can try running Phoenix's backend and frontend separately. In root of the repo, run:
+
+```shell
+python -m phoenix.server.main --dev serve
+cd app
+pnpm run ui:dev
+```
+
 Before running the script above you should configure your running environment by creating a `.env` file besides the `.env.example` file in the root of this project. You can find an example of the `.env` file in the `.env.example` file.
 
 Depending on what flows you are trying to build features for, you may want to adjust the scripts block within the [package.json](./package.json) file so that the server is serving the appropriate fixture data.

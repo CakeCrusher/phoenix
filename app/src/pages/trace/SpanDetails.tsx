@@ -596,31 +596,36 @@ function LLMSpanInfo(props: { span: Span; spanAttributes: AttributeObject }) {
     if (llmAttributes == null) {
       return [];
     }
-    const inputMessagesValue =
-      llmAttributes[LLMAttributePostfixes.input_messages];
-
-    // At this point, we cannot trust the type of outputMessagesValue
+    
+    const inputMessagesValue = llmAttributes[LLMAttributePostfixes.input_messages];
+    
+    // Check if this is an array that can be mapped over
     if (!isAttributeMessages(inputMessagesValue)) {
       return [];
     }
-
-    return (inputMessagesValue
-      ?.map((obj) => obj[SemanticAttributePrefixes.message])
-      .filter(Boolean) || []) as AttributeMessage[];
+    
+    return safelyExtractDocuments<AttributeMessage>(
+      inputMessagesValue, 
+      SemanticAttributePrefixes.message
+    );
   }, [llmAttributes]);
 
   const llmTools = useMemo<AttributeLLMToolDefinition[]>(() => {
     if (llmAttributes == null) {
       return [];
     }
+    
     const tools = llmAttributes[LLMAttributePostfixes.tools];
+    
+    // Make sure tools is an array that can be mapped over
     if (!Array.isArray(tools)) {
       return [];
     }
-    const toolDefinitions = tools
-      ?.map((obj) => obj[SemanticAttributePrefixes.tool])
-      .filter(Boolean) as AttributeLLMToolDefinition[];
-    return toolDefinitions;
+    
+    return safelyExtractDocuments<AttributeLLMToolDefinition>(
+      tools,
+      SemanticAttributePrefixes.tool
+    );
   }, [llmAttributes]);
 
   const llmToolSchemas = useMemo<string[]>(() => {
@@ -636,16 +641,18 @@ function LLMSpanInfo(props: { span: Span; spanAttributes: AttributeObject }) {
     if (llmAttributes == null) {
       return [];
     }
-    const outputMessagesValue =
-      llmAttributes[LLMAttributePostfixes.output_messages];
-
-    // At this point, we cannot trust the type of outputMessagesValue
+    
+    const outputMessagesValue = llmAttributes[LLMAttributePostfixes.output_messages];
+    
+    // Check if this is an array that can be mapped over
     if (!isAttributeMessages(outputMessagesValue)) {
       return [];
     }
-    return (outputMessagesValue
-      .map((obj) => obj[SemanticAttributePrefixes.message])
-      .filter(Boolean) || []) as AttributeMessage[];
+    
+    return safelyExtractDocuments<AttributeMessage>(
+      outputMessagesValue, 
+      SemanticAttributePrefixes.message
+    );
   }, [llmAttributes]);
 
   const prompts = useMemo<string[]>(() => {
@@ -887,9 +894,11 @@ function RetrieverSpanInfo(props: {
     if (retrieverAttributes == null) {
       return [];
     }
-    return (retrieverAttributes[RetrievalAttributePostfixes.documents]
-      ?.map((obj) => obj[SemanticAttributePrefixes.document])
-      .filter(Boolean) || []) as AttributeDocument[];
+    
+    return safelyExtractDocuments<AttributeDocument>(
+      retrieverAttributes[RetrievalAttributePostfixes.documents],
+      SemanticAttributePrefixes.document
+    );
   }, [retrieverAttributes]);
 
   // Construct a map of document position to document evaluations
@@ -1020,17 +1029,21 @@ function RerankerSpanInfo(props: {
     if (rerankerAttributes == null) {
       return [];
     }
-    return (rerankerAttributes[RerankerAttributePostfixes.input_documents]
-      ?.map((obj) => obj[SemanticAttributePrefixes.document])
-      .filter(Boolean) || []) as AttributeDocument[];
+    
+    return safelyExtractDocuments<AttributeDocument>(
+      rerankerAttributes[RerankerAttributePostfixes.input_documents],
+      SemanticAttributePrefixes.document
+    );
   }, [rerankerAttributes]);
   const output_documents = useMemo<AttributeDocument[]>(() => {
     if (rerankerAttributes == null) {
       return [];
     }
-    return (rerankerAttributes[RerankerAttributePostfixes.output_documents]
-      ?.map((obj) => obj[SemanticAttributePrefixes.document])
-      .filter(Boolean) || []) as AttributeDocument[];
+    
+    return safelyExtractDocuments<AttributeDocument>(
+      rerankerAttributes[RerankerAttributePostfixes.output_documents],
+      SemanticAttributePrefixes.document
+    );
   }, [rerankerAttributes]);
 
   const numInputDocuments = input_documents.length;
@@ -1124,9 +1137,11 @@ function EmbeddingSpanInfo(props: {
     if (embeddingAttributes == null) {
       return [];
     }
-    return (embeddingAttributes[EmbeddingAttributePostfixes.embeddings]
-      ?.map((obj) => obj[SemanticAttributePrefixes.embedding])
-      .filter(Boolean) || []) as AttributeEmbeddingEmbedding[];
+    
+    return safelyExtractDocuments<AttributeEmbeddingEmbedding>(
+      embeddingAttributes[EmbeddingAttributePostfixes.embeddings],
+      SemanticAttributePrefixes.embedding
+    );
   }, [embeddingAttributes]);
 
   const hasEmbeddings = embeddings.length > 0;
@@ -1986,6 +2001,35 @@ function EmptyIndicator({ text }: { text: string }) {
     </Flex>
   );
 }
+/**
+ * Safely extracts documents from attribute data, handling cases where the data might not be an array
+ * @param attributeData The attribute data that should contain documents
+ * @param semanticPrefix The semantic prefix to use when extracting nested documents
+ * @returns Array of documents, safely handled to prevent errors
+ */
+function safelyExtractDocuments<T>(
+  attributeData: unknown, 
+  semanticPrefix: string
+): T[] {
+  if (attributeData == null) {
+    return [];
+  }
+  
+  // Handle case when not an array
+  if (!Array.isArray(attributeData)) {
+    // If it's a direct object, try to parse it as a single document
+    if (attributeData && typeof attributeData === 'object') {
+      const singleItem = (attributeData as any)[semanticPrefix];
+      return singleItem ? [singleItem as T] : [];
+    }
+    return [];
+  }
+  
+  return (attributeData
+    .map((obj) => obj[semanticPrefix])
+    .filter(Boolean) || []) as T[];
+}
+
 function SpanEventsList({ events }: { events: Span["events"] }) {
   if (events.length === 0) {
     return <EmptyIndicator text="No events" />;

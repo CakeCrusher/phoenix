@@ -1033,16 +1033,42 @@ function RerankerSpanInfo(props: {
     if (rerankerAttributes == null) {
       return [];
     }
-    return (rerankerAttributes[RerankerAttributePostfixes.input_documents]
-      ?.map((obj) => obj[SemanticAttributePrefixes.document])
+    
+    const inputDocs = rerankerAttributes[RerankerAttributePostfixes.input_documents];
+    
+    // Handle case when inputDocs is not an array
+    if (!Array.isArray(inputDocs)) {
+      // If it's a direct object, try to parse it as a single document
+      if (inputDocs && typeof inputDocs === 'object') {
+        const singleDoc = inputDocs[SemanticAttributePrefixes.document];
+        return singleDoc ? [singleDoc as AttributeDocument] : [];
+      }
+      return [];
+    }
+    
+    return (inputDocs
+      .map((obj) => obj[SemanticAttributePrefixes.document])
       .filter(Boolean) || []) as AttributeDocument[];
   }, [rerankerAttributes]);
   const output_documents = useMemo<AttributeDocument[]>(() => {
     if (rerankerAttributes == null) {
       return [];
     }
-    return (rerankerAttributes[RerankerAttributePostfixes.output_documents]
-      ?.map((obj) => obj[SemanticAttributePrefixes.document])
+    
+    const outputDocs = rerankerAttributes[RerankerAttributePostfixes.output_documents];
+    
+    // Handle case when outputDocs is not an array
+    if (!Array.isArray(outputDocs)) {
+      // If it's a direct object, try to parse it as a single document
+      if (outputDocs && typeof outputDocs === 'object') {
+        const singleDoc = outputDocs[SemanticAttributePrefixes.document];
+        return singleDoc ? [singleDoc as AttributeDocument] : [];
+      }
+      return [];
+    }
+    
+    return (outputDocs
+      .map((obj) => obj[SemanticAttributePrefixes.document])
       .filter(Boolean) || []) as AttributeDocument[];
   }, [rerankerAttributes]);
 
@@ -1137,8 +1163,21 @@ function EmbeddingSpanInfo(props: {
     if (embeddingAttributes == null) {
       return [];
     }
-    return (embeddingAttributes[EmbeddingAttributePostfixes.embeddings]
-      ?.map((obj) => obj[SemanticAttributePrefixes.embedding])
+    
+    const embeddingsArray = embeddingAttributes[EmbeddingAttributePostfixes.embeddings];
+    
+    // Handle case when embeddingsArray is not an array
+    if (!Array.isArray(embeddingsArray)) {
+      // If it's a direct object, try to parse it as a single embedding
+      if (embeddingsArray && typeof embeddingsArray === 'object') {
+        const singleEmbedding = embeddingsArray[SemanticAttributePrefixes.embedding];
+        return singleEmbedding ? [singleEmbedding as AttributeEmbeddingEmbedding] : [];
+      }
+      return [];
+    }
+    
+    return (embeddingsArray
+      .map((obj) => obj[SemanticAttributePrefixes.embedding])
       .filter(Boolean) || []) as AttributeEmbeddingEmbedding[];
   }, [embeddingAttributes]);
 

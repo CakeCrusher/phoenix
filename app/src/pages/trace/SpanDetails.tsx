@@ -614,14 +614,18 @@ function LLMSpanInfo(props: { span: Span; spanAttributes: AttributeObject }) {
     if (llmAttributes == null) {
       return [];
     }
+    
     const tools = llmAttributes[LLMAttributePostfixes.tools];
+    
+    // Make sure tools is an array that can be mapped over
     if (!Array.isArray(tools)) {
       return [];
     }
-    const toolDefinitions = tools
-      ?.map((obj) => obj[SemanticAttributePrefixes.tool])
-      .filter(Boolean) as AttributeLLMToolDefinition[];
-    return toolDefinitions;
+    
+    return safelyExtractDocuments<AttributeLLMToolDefinition>(
+      tools,
+      SemanticAttributePrefixes.tool
+    );
   }, [llmAttributes]);
 
   const llmToolSchemas = useMemo<string[]>(() => {

@@ -887,8 +887,21 @@ function RetrieverSpanInfo(props: {
     if (retrieverAttributes == null) {
       return [];
     }
-    return (retrieverAttributes[RetrievalAttributePostfixes.documents]
-      ?.map((obj) => obj[SemanticAttributePrefixes.document])
+    
+    const retrievalDocs = retrieverAttributes[RetrievalAttributePostfixes.documents];
+    
+    // Handle case when retrievalDocs is not an array
+    if (!Array.isArray(retrievalDocs)) {
+      // If it's a direct object, try to parse it as a single document
+      if (retrievalDocs && typeof retrievalDocs === 'object') {
+        const singleDoc = retrievalDocs[SemanticAttributePrefixes.document];
+        return singleDoc ? [singleDoc as AttributeDocument] : [];
+      }
+      return [];
+    }
+    
+    return (retrievalDocs
+      .map((obj) => obj[SemanticAttributePrefixes.document])
       .filter(Boolean) || []) as AttributeDocument[];
   }, [retrieverAttributes]);
 
